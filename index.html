@@ -103,7 +103,7 @@
       const profitRetailer = retail - fees - maxBid;
       const totalIncFees = maxBid + fees;
       const profitB4Fees = soldFor ? soldFor - retail : 0;
-      const totalProfit = soldFor ? (soldFor + fees) + retail : 0;
+      const totalProfit = soldFor ? (soldFor - fees) + retail : 0;
 
       document.getElementById(`percent-${id}`).value = toFixed(percent) + "%";
       document.getElementById(`profitRetailer-${id}`).value = "£" + toFixed(profitRetailer);
