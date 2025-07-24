@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mannheim Bid Sheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .car-form {
+      border: 2px solid #ccc;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+    }
+    .form-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    input, select {
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    input[readonly] {
+      background: #f4f4f4;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>LRH Test Site</h1>
+
+  <div id="carContainer"></div>
+  <button onclick="addCar()">➕ Add Car</button>
+
+  <script>
+    let carIndex = 0;
+
+    function addCar() {
+      const id = carIndex++;
+      const container = document.createElement('div');
+      container.className = 'car-form';
+      container.innerHTML = `
+        <div class="form-group">
+            <div><label>Registration (VRM)</label><input type="text" id="reg-${id}"></div>
+            <div><label>Make</label><input type="text" id="make-${id}"></div>
+            <div><label>Model</label><input type="text" id="model-${id}"></div>
+            <div><label>Grade</label><input type="text" id="grade-${id}"></div>
+            <div><label>Retail</label><input type="number" id="retail-${id}"></div>
+            <div><label>Fees</label><input type="number" id="fees-${id}"></div>
+            <div><label>Day to Sell</label><input type="number" id="days-${id}"></div>
+            <div><label>Ranking</label><input type="text" id="ranking-${id}"></div>
+            <div><label>Gross B4 VAT</label><input type="number" id="grossB4-${id}"></div>
+            <div><label>Gross Post VAT</label><input type="number" id="grossPost-${id}"></div>
+            <div><label>Max Bid</label><input type="number" id="maxBid-${id}"></div>
+            <div><label>Sold For (inc. Fees)</label><input type="number" id="soldFor-${id}"></div>
+            <div><label>Trade It At</label><input type="number" id="tradeIt-${id}"></div>
+        </div>
+
+        <div class="form-group">
+            <div><label>% of Retail</label><input type="text" id="percent-${id}" readonly></div>
+            <div><label>Profit for Retailer</label><input type="text" id="profitRetailer-${id}" readonly></div>
+            <div><label>Total inc. Fees</label><input type="text" id="totalIncFees-${id}" readonly></div>
+            <div><label>Profit Before Fees</label><input type="text" id="profitB4Fees-${id}" readonly></div>
+            <div><label>Less Buying Fees</label><input type="text" id="lessFees-${id}" readonly></div>
+            <div><label>Total Profit</label><input type="text" id="totalProfit-${id}" readonly></div>
+        </div>
+      `;
+      document.getElementById('carContainer').appendChild(container);
+
+      // Add listeners to recalculate on input
+      container.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', () => recalculate(id));
+      });
+    }
+
+    function toFixed(val) {
+      return isNaN(val) ? "" : parseFloat(val).toFixed(2);
+    }
+
+    function recalculate(id) {
+      const retail = parseFloat(document.getElementById(`retail-${id}`).value) || 0;
+      const fees = parseFloat(document.getElementById(`fees-${id}`).value) || 0;
+      const maxBid = parseFloat(document.getElementById(`maxBid-${id}`).value) || 0;
+      const soldFor = parseFloat(document.getElementById(`soldFor-${id}`).value) || 0;
+
+      const percent = retail ? (maxBid / retail) * 100 : 0;
+      const profitRetailer = retail - fees - maxBid;
+      const totalIncFees = maxBid + fees;
+      const profitB4Fees = soldFor ? soldFor - retail : 0;
+      const totalProfit = soldFor ? (soldFor - fees) - retail : 0;
+
+      document.getElementById(`percent-${id}`).value = toFixed(percent) + "%";
+      document.getElementById(`profitRetailer-${id}`).value = "£" + toFixed(profitRetailer);
+      document.getElementById(`totalIncFees-${id}`).value = "£" + toFixed(totalIncFees);
+      document.getElementById(`profitB4Fees-${id}`).value = "£" + toFixed(profitB4Fees);
+      document.getElementById(`lessFees-${id}`).value = "£" + toFixed(fees);
+      document.getElementById(`totalProfit-${id}`).value = "£" + toFixed(totalProfit);
+    }
+
+    // Add first car on load
+    addCar();
+  </script>
+
+</body>
+</html>
