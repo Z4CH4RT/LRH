@@ -49,11 +49,13 @@
 <body>
 
   <h1>Mannheim Bid Sheet</h1>
+  <button onclick="sortByLotNumber()">🔢 Sort by Lot Number</button>
 
   <div id="carContainer"></div>
   <button onclick="addCar()">➕ Add Car</button>
   <button onclick="exportToLRH()">💾 Export .lrh</button>
   <input type="file" accept=".lrh" onchange="loadFromLRH(event)">
+  
 
   <script>
     let carIndex = 0;
@@ -66,8 +68,10 @@
       const id = carIndex++;
       const container = document.createElement('div');
       container.className = 'car-form';
+      container.setAttribute('data-index', id);
       container.innerHTML = `
         <div class="form-group">
+          <div><label>Lot Number</label><input type="text" id="lot-${id}" value="${values.lot || ''}"></div>
           <div><label>Registration (VRM)</label><input type="text" id="reg-${id}" value="${values.reg || ''}"></div>
           <div><label>Make</label><input type="text" id="make-${id}" value="${values.make || ''}"></div>
           <div><label>Model</label><input type="text" id="model-${id}" value="${values.model || ''}"></div>
@@ -76,20 +80,22 @@
           <div><label>Fees</label><input type="number" id="fees-${id}" value="${values.fees || ''}"></div>
           <div><label>Day to Sell</label><input type="number" id="days-${id}" value="${values.days || ''}"></div>
           <div><label>Ranking</label><input type="text" id="ranking-${id}" value="${values.ranking || ''}"></div>
-          <div><label>Gross B4 VAT</label><input type="number" id="grossB4-${id}" value="${values.grossB4 || ''}"></div>
-          <div><label>Gross Post VAT</label><input type="number" id="grossPost-${id}" value="${values.grossPost || ''}"></div>
           <div><label>Max Bid</label><input type="number" id="maxBid-${id}" value="${values.maxBid || ''}"></div>
-          <div><label>Sold For (inc. Fees)</label><input type="number" id="soldFor-${id}" value="${values.soldFor || ''}"></div>
+          <div><label>Sold For</label><input type="number" id="soldFor-${id}" value="${values.soldFor || ''}"></div>
           <div><label>Trade It At</label><input type="number" id="tradeIt-${id}" value="${values.tradeIt || ''}"></div>
+          <div><label>Total Prep</label><input type="number" id="totalPrep-${id}" value="${values.tradeIt || ''}"></div>
         </div>
 
         <div class="form-group">
+          
           <div><label>% of Retail</label><input type="text" id="percent-${id}" readonly></div>
           <div><label>Profit for Retailer</label><input type="text" id="profitRetailer-${id}" readonly></div>
           <div><label>Total inc. Fees</label><input type="text" id="totalIncFees-${id}" readonly></div>
           <div><label>Profit Before Fees</label><input type="text" id="profitB4Fees-${id}" readonly></div>
           <div><label>Less Buying Fees</label><input type="text" id="lessFees-${id}" readonly></div>
           <div><label>Total Profit</label><input type="text" id="totalProfit-${id}" readonly></div>
+          <div><label>Gross B4 VAT</label><input type="text" id="grossB4-${id}" readonly></div>
+          <div><label>Gross Post VAT</label><input type="text" id="grossPost-${id}" readonly></div>
         </div>
       `;
       document.getElementById('carContainer').appendChild(container);
@@ -105,12 +111,15 @@
       const fees = parseFloat(document.getElementById(`fees-${id}`).value) || 0;
       const maxBid = parseFloat(document.getElementById(`maxBid-${id}`).value) || 0;
       const soldFor = parseFloat(document.getElementById(`soldFor-${id}`).value) || 0;
+      const totalPrep = parseFloat(document.getElementById(`totalPrep-${id}`).value) || 0;
 
       const percent = retail ? (maxBid / retail) * 100 : 0;
       const profitRetailer = retail - fees - maxBid;
       const totalIncFees = maxBid + fees;
       const profitB4Fees = soldFor - retail;
-      const totalProfit = soldFor ? (retail - soldFor) - fees : 0;
+      const grossB4 = retail - (fees + soldFor);
+      const grossPost = grossB4 / 1.2;
+      const totalProfit = soldFor ? grossPost - totalPrep : 0;
 
       document.getElementById(`percent-${id}`).value = toFixed(percent) + "%";
       document.getElementById(`profitRetailer-${id}`).value = "£" + toFixed(profitRetailer);
@@ -118,6 +127,8 @@
       document.getElementById(`profitB4Fees-${id}`).value = "£" + toFixed(profitB4Fees);
       document.getElementById(`lessFees-${id}`).value = "£" + toFixed(fees);
       document.getElementById(`totalProfit-${id}`).value = "£" + toFixed(totalProfit);
+      document.getElementById(`grossB4-${id}`).value = "£" + toFixed(grossB4);
+      document.getElementById(`grossPost-${id}`).value = "£" + toFixed(grossPost);
     }
 
     function exportToLRH() {
@@ -127,7 +138,7 @@
         if (!document.getElementById(`reg-${i}`)) continue;
 
         data += `Car ${i + 1}\n`;
-        ["reg","make","model","grade","retail","fees","days","ranking","grossB4","grossPost","maxBid","soldFor","tradeIt","percent","profitRetailer","totalIncFees","profitB4Fees","lessFees","totalProfit"].forEach(field => {
+        ["lot","reg","make","model","grade","retail","fees","days","ranking","grossB4","grossPost","maxBid","soldFor","tradeIt","percent","profitRetailer","totalIncFees","profitB4Fees","lessFees","totalProfit"].forEach(field => {
           data += `${field}: ${get(field)}\n`;
         });
         data += `----------------------\n\n`;
@@ -160,6 +171,20 @@
         if (Object.keys(car).length) addCar(car);
       };
       reader.readAsText(file);
+    }
+
+    function sortByLotNumber() {
+      const container = document.getElementById('carContainer');
+      const forms = Array.from(container.getElementsByClassName('car-form'));
+      forms.sort((a, b) => {
+        const aId = a.getAttribute('data-index');
+        const bId = b.getAttribute('data-index');
+        const aVal = parseInt(document.getElementById(`lot-${aId}`).value) || 0;
+        const bVal = parseInt(document.getElementById(`lot-${bId}`).value) || 0;
+        return aVal - bVal;
+      });
+      container.innerHTML = "";
+      forms.forEach(f => container.appendChild(f));
     }
 
     addCar();
