@@ -34,63 +34,70 @@
     input[readonly] {
       background: #f4f4f4;
     }
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
     button {
       padding: 10px 20px;
       margin-top: 10px;
-      display: block;
+      display: inline-block;
     }
   </style>
 </head>
 <body>
 
-  <h1>LRH Test Site</h1>
+  <h1>Mannheim Bid Sheet</h1>
 
   <div id="carContainer"></div>
   <button onclick="addCar()">➕ Add Car</button>
+  <button onclick="exportToLRH()">💾 Export .lrh</button>
+  <input type="file" accept=".lrh" onchange="loadFromLRH(event)">
 
   <script>
     let carIndex = 0;
 
-    function addCar() {
+    function toFixed(val) {
+      return isNaN(val) ? "" : parseFloat(val).toFixed(2);
+    }
+
+    function addCar(values = {}) {
       const id = carIndex++;
       const container = document.createElement('div');
       container.className = 'car-form';
       container.innerHTML = `
         <div class="form-group">
-            <div><label>Registration (VRM)</label><input type="text" id="reg-${id}"></div>
-            <div><label>Make</label><input type="text" id="make-${id}"></div>
-            <div><label>Model</label><input type="text" id="model-${id}"></div>
-            <div><label>Grade</label><input type="text" id="grade-${id}"></div>
-            <div><label>Retail</label><input type="number" id="retail-${id}"></div>
-            <div><label>Fees</label><input type="number" id="fees-${id}"></div>
-            <div><label>Day to Sell</label><input type="number" id="days-${id}"></div>
-            <div><label>Ranking</label><input type="text" id="ranking-${id}"></div>
-            <div><label>Gross B4 VAT</label><input type="number" id="grossB4-${id}"></div>
-            <div><label>Gross Post VAT</label><input type="number" id="grossPost-${id}"></div>
-            <div><label>Max Bid</label><input type="number" id="maxBid-${id}"></div>
-            <div><label>Sold For (inc. Fees)</label><input type="number" id="soldFor-${id}"></div>
-            <div><label>Trade It At</label><input type="number" id="tradeIt-${id}"></div>
+          <div><label>Registration (VRM)</label><input type="text" id="reg-${id}" value="${values.reg || ''}"></div>
+          <div><label>Make</label><input type="text" id="make-${id}" value="${values.make || ''}"></div>
+          <div><label>Model</label><input type="text" id="model-${id}" value="${values.model || ''}"></div>
+          <div><label>Grade</label><input type="text" id="grade-${id}" value="${values.grade || ''}"></div>
+          <div><label>Retail</label><input type="number" id="retail-${id}" value="${values.retail || ''}"></div>
+          <div><label>Fees</label><input type="number" id="fees-${id}" value="${values.fees || ''}"></div>
+          <div><label>Day to Sell</label><input type="number" id="days-${id}" value="${values.days || ''}"></div>
+          <div><label>Ranking</label><input type="text" id="ranking-${id}" value="${values.ranking || ''}"></div>
+          <div><label>Gross B4 VAT</label><input type="number" id="grossB4-${id}" value="${values.grossB4 || ''}"></div>
+          <div><label>Gross Post VAT</label><input type="number" id="grossPost-${id}" value="${values.grossPost || ''}"></div>
+          <div><label>Max Bid</label><input type="number" id="maxBid-${id}" value="${values.maxBid || ''}"></div>
+          <div><label>Sold For (inc. Fees)</label><input type="number" id="soldFor-${id}" value="${values.soldFor || ''}"></div>
+          <div><label>Trade It At</label><input type="number" id="tradeIt-${id}" value="${values.tradeIt || ''}"></div>
         </div>
 
         <div class="form-group">
-            <div><label>% of Retail</label><input type="text" id="percent-${id}" readonly></div>
-            <div><label>Profit for Retailer</label><input type="text" id="profitRetailer-${id}" readonly></div>
-            <div><label>Total inc. Fees</label><input type="text" id="totalIncFees-${id}" readonly></div>
-            <div><label>Profit Before Fees</label><input type="text" id="profitB4Fees-${id}" readonly></div>
-            <div><label>Less Buying Fees</label><input type="text" id="lessFees-${id}" readonly></div>
-            <div><label>Total Profit</label><input type="text" id="totalProfit-${id}" readonly></div>
+          <div><label>% of Retail</label><input type="text" id="percent-${id}" readonly></div>
+          <div><label>Profit for Retailer</label><input type="text" id="profitRetailer-${id}" readonly></div>
+          <div><label>Total inc. Fees</label><input type="text" id="totalIncFees-${id}" readonly></div>
+          <div><label>Profit Before Fees</label><input type="text" id="profitB4Fees-${id}" readonly></div>
+          <div><label>Less Buying Fees</label><input type="text" id="lessFees-${id}" readonly></div>
+          <div><label>Total Profit</label><input type="text" id="totalProfit-${id}" readonly></div>
         </div>
       `;
       document.getElementById('carContainer').appendChild(container);
 
-      // Add listeners to recalculate on input
       container.querySelectorAll('input').forEach(input => {
         input.addEventListener('input', () => recalculate(id));
       });
-    }
-
-    function toFixed(val) {
-      return isNaN(val) ? "" : parseFloat(val).toFixed(2);
+      recalculate(id);
     }
 
     function recalculate(id) {
@@ -102,8 +109,8 @@
       const percent = retail ? (maxBid / retail) * 100 : 0;
       const profitRetailer = retail - fees - maxBid;
       const totalIncFees = maxBid + fees;
-      const profitB4Fees = soldFor ? soldFor - retail : 0;
-      const totalProfit = soldFor ? (retail - soldFor) + fees : 0;
+      const profitB4Fees = soldFor - retail;
+      const totalProfit = soldFor ? (retail - soldFor) - fees : 0;
 
       document.getElementById(`percent-${id}`).value = toFixed(percent) + "%";
       document.getElementById(`profitRetailer-${id}`).value = "£" + toFixed(profitRetailer);
@@ -113,9 +120,49 @@
       document.getElementById(`totalProfit-${id}`).value = "£" + toFixed(totalProfit);
     }
 
-    // Add first car on load
+    function exportToLRH() {
+      let data = "";
+      for (let i = 0; i < carIndex; i++) {
+        const get = id => document.getElementById(`${id}-${i}`)?.value || "";
+        if (!document.getElementById(`reg-${i}`)) continue;
+
+        data += `Car ${i + 1}\n`;
+        ["reg","make","model","grade","retail","fees","days","ranking","grossB4","grossPost","maxBid","soldFor","tradeIt","percent","profitRetailer","totalIncFees","profitB4Fees","lessFees","totalProfit"].forEach(field => {
+          data += `${field}: ${get(field)}\n`;
+        });
+        data += `----------------------\n\n`;
+      }
+
+      const blob = new Blob([data], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "mannheim_bids.lrh";
+      a.click();
+    }
+
+    function loadFromLRH(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const lines = e.target.result.split(/\r?\n/);
+        let car = {};
+        lines.forEach(line => {
+          if (line.startsWith("Car ")) {
+            if (Object.keys(car).length) addCar(car);
+            car = {};
+          } else if (line.includes(": ")) {
+            const [key, ...rest] = line.split(": ");
+            car[key.trim()] = rest.join(": ").trim();
+          }
+        });
+        if (Object.keys(car).length) addCar(car);
+      };
+      reader.readAsText(file);
+    }
+
     addCar();
   </script>
-
 </body>
 </html>
